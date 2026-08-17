@@ -2,6 +2,11 @@
 
 지원 기준은 Blender 4.0 이상이며, 정식 검증 환경은 Blender 5.2.0 LTS입니다.
 
+현재 정식 지원 대상은 서비스 중인 Nova1492AR의 정식 GX/XFI 리소스입니다. OR 원본,
+OR 외형을 AR 리소스 위에 덮은 스킨용 혼합본과 개인 수정본은 아직 지원하지 않습니다.
+혼합 리소스의 실제 실패 사례는 [`docs/COMPATIBILITY_KO.md`](../docs/COMPATIBILITY_KO.md)에
+정리되어 있습니다.
+
 ## 설치
 
 릴리스의 `GXParser-Blender-Addon-<version>.zip`을 받아 Blender의
@@ -66,4 +71,5 @@ Blender 5.2.0 LTS에서 다음 두 조합을 실제 클라이언트 파일로 �
 
 - 재질과 UV 애니메이션이 원본 Direct3D 출력과 픽셀 단위로 동일하다는 보장은 없습니다.
 - 이 조립식은 표준 플레이어 MP/BP/AP용이며 메탈리언에는 적용하지 않습니다.
+- OR 및 OR 외형을 덮은 AR 혼합 리소스의 XFI action·다중 AP 접속 규칙은 지원하지 않습니다.
 - 서버가 결정하는 공격 대상, 피해, 명중 판정은 임포터 범위가 아닙니다.

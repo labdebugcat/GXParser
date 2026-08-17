@@ -3,6 +3,11 @@
 이 문서는 GXParser 정식 릴리스의 단일 파츠 임포터와 MP/BP/AP 복합 조립 임포터를 처음
 사용하는 사람을 위한 안내서입니다. 검증 기준은 Blender 5.2.0 LTS와 GXParser v0.6.0입니다.
 
+현재 공식 지원 대상은 서비스 중인 Nova1492AR의 정식 GX/XFI입니다. OR 리소스 및 OR
+외형을 AR 파츠 위에 덮은 혼합본은 같은 확장자를 사용하더라도 action 구간과 부착점 사용
+방식이 달라 정상 조립을 보장하지 않습니다. [호환성 문서](COMPATIBILITY_KO.md)를 먼저
+확인하세요.
+
 ## 1. 설치
 
 1. [Releases](https://github.com/labdebugcat/GXParser/releases)에서
