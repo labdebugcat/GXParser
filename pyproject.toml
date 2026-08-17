@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nova1492-gxparser"
-version = "0.6.0"
+version = "0.7.0b1"
 description = "A conservative Python parser for Nova 1492 GX and XFI resource metadata"
 readme = "README.md"
 requires-python = ">=3.10"
