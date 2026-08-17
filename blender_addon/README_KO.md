@@ -13,6 +13,10 @@
 `File > Import > Nova1492 GX/XFI (.gx)`에서 GX 하나를 선택합니다. 노드 계층, 메시,
 재질, 텍스처와 옆에 있는 XFI action을 가져옵니다.
 
+가져온 직후 모델이 회색으로 보여도 텍스처 누락이라고 단정하지 마세요. Blender의 기본
+`Solid` 모드는 텍스처를 표시하지 않습니다. `Z`를 누르고 `Material Preview`를 선택하거나
+뷰포트 오른쪽 위의 재질 미리보기 구 아이콘을 누릅니다.
+
 - 텍스처가 없으면 흰 모델로 조용히 대체하지 않고 누락 이름을 표시합니다.
 - `Pack textures into .blend`를 사용하면 로드한 이미지를 `.blend`에 포함합니다.
 - XFI action ID는 의미를 임의로 이름 붙이지 않고 원시 숫자로 노출합니다.
@@ -30,6 +34,20 @@ AP world = BP world × BP visual root × BP XFI transforms[2]
 
 팔형·어깨형·탑형을 추측해 다른 소켓으로 보내지 않으며, AABB/메시 중심 정렬이나 수동
 간격 보정을 사용하지 않습니다. ACP와 서브코어는 외형 메시 조립 대상이 아닙니다.
+
+## 실제 조립 예시
+
+![토들러N, 플래툰, 헤비배럴 쿼드뷰](../docs/images/toddler-n_platoon_heavy-barrel_quad-view.png)
+
+| 역할 | 파츠 | GX |
+| --- | --- | --- |
+| MP | 토들러N | `n_legs41_tdr.gx` |
+| BP | 플래툰 | `body2_prt.gx` |
+| AP | 헤비배럴 | `arm2_hbbr.gx` |
+
+정식 `v0.6.0`에서 13 / 1 / 5개 메시와 5개 패킹 텍스처를 확인했습니다. 자세한 설치,
+메뉴 사용 순서와 오류별 확인 방법은 [`docs/BLENDER_GUIDE_KO.md`](../docs/BLENDER_GUIDE_KO.md)를
+참고하세요.
 
 ## 검증 결과
 
