@@ -22,4 +22,9 @@ jobs:
       - run: python scripts/build_blender_addon.py
       - env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --verify-tag
+        run: |
+          release_args=("$GITHUB_REF_NAME" dist/* --generate-notes --verify-tag)
+          if [[ "$GITHUB_REF_NAME" == *preview* ]]; then
+            release_args+=(--prerelease)
+          fi
+          gh release create "${release_args[@]}"

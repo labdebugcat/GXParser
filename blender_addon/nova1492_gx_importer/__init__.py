@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 bl_info = {
-    "name": "GXParser Blender Importers",
+    "name": "GXParser Blender Importers (Preview)",
     "author": "Project N",
-    "version": (0, 6, 0),
+    "version": (0, 7, 0),
     "blender": (4, 0, 0),
     "location": "File > Import > Nova1492 GX/XFI or Nova1492 Assembled Unit",
-    "description": "Imports single GX parts or assembles MP/BP/AP with the verified XFI chain",
+    "description": "Imports GX parts with current AR and legacy merged-pair assembly profiles",
     "category": "Import-Export",
 }
 
@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import bpy
-from bpy.props import BoolProperty, IntProperty, StringProperty
+from bpy.props import BoolProperty, EnumProperty, IntProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Matrix, Vector
 
@@ -666,6 +666,60 @@ def _first_mesh_node(result: dict[str, Any]) -> bpy.types.Object:
     return nodes[node_index]
 
 
+def _short_node_name(value: object) -> str:
+    return str(value or "").replace("\\", "/").rsplit("/", 1)[-1].lower()
+
+
+def _descendants(nodes: list[dict[str, Any]], root_index: int) -> set[int]:
+    result = {root_index}
+    changed = True
+    while changed:
+        changed = False
+        for index, node in enumerate(nodes):
+            if index in result:
+                continue
+            if int(node.get("parent_index", -1)) in result:
+                result.add(index)
+                changed = True
+    return result
+
+
+def detect_assembly_profile(ap: dict[str, Any]) -> dict[str, Any]:
+    """Classify only structures that carry unambiguous evidence in the GX."""
+    nodes = ap["parsed"].get("nodes", [])
+    by_name: dict[str, int] = {}
+    for index, node in enumerate(nodes):
+        by_name.setdefault(_short_node_name(node.get("name")), index)
+    merge_indices = tuple(by_name.get(name, -1) for name in ("merge_head", "merge_a", "merge_b"))
+    if all(index >= 0 for index in merge_indices):
+        _, left_index, right_index = merge_indices
+        left_nodes = _descendants(nodes, left_index)
+        right_nodes = _descendants(nodes, right_index)
+        mesh_nodes = {
+            int(mesh.get("node_index", -1))
+            for mesh in ap["parsed"].get("meshes", [])
+        }
+        left_names = {_short_node_name(nodes[index].get("name")) for index in left_nodes}
+        right_names = {_short_node_name(nodes[index].get("name")) for index in right_nodes}
+        left_arm = any("larm" in name or "leftarm" in name for name in left_names)
+        right_arm = any("rarm" in name or "rightarm" in name for name in right_names)
+        if left_nodes & mesh_nodes and right_nodes & mesh_nodes and left_arm and right_arm:
+            return {
+                "profile": "LEGACY_MERGED_ARM",
+                "reason": "merge_a/larm and merge_b/rarm branches with meshes",
+                "left_index": left_index,
+                "right_index": right_index,
+            }
+        raise RuntimeError(
+            "Merged AP structure found, but its left/right mount role is ambiguous. "
+            "Use single-part import until a verified profile exists."
+        )
+    return {
+        "profile": "CURRENT_AR",
+        "reason": "no verified legacy merged-pair hierarchy",
+    }
+
+
 def assemble_player_parts(
     context: bpy.types.Context,
     mp_path: str,
@@ -675,36 +729,46 @@ def assemble_player_parts(
     import_animations: bool = True,
     pack_images: bool = True,
     strict_color_textures: bool = True,
+    assembly_profile: str = "AUTO",
+    mp_action_id: int | None = None,
+    bp_action_id: int | None = None,
+    ap_action_id: int | None = None,
 ) -> dict[str, Any]:
-    """Import and assemble MP -> BP -> AP with the verified native chain.
+    """Import and assemble MP -> BP -> AP with a verified resource profile.
 
     BP remains a child of the animated MP first-mesh node and AP remains a
     child of the animated BP first-mesh node.  This preserves inherited
     bobbing and attack motion instead of baking a one-frame center alignment.
     """
+    action_ids = {
+        "mp": action_id if mp_action_id is None else mp_action_id,
+        "bp": action_id if bp_action_id is None else bp_action_id,
+        "ap": action_id if ap_action_id is None else ap_action_id,
+    }
     mp = import_gx(
-        context, mp_path, action_id, import_animations,
+        context, mp_path, action_ids["mp"], import_animations,
         pack_images, strict_color_textures
     )
     bp = import_gx(
-        context, bp_path, action_id, import_animations,
+        context, bp_path, action_ids["bp"], import_animations,
         pack_images, strict_color_textures
     )
     ap = import_gx(
-        context, ap_path, action_id, import_animations,
+        context, ap_path, action_ids["ap"], import_animations,
         pack_images, strict_color_textures
     )
     mp_sockets = mp["xfi_data"].get("transforms", [])
     bp_sockets = bp["xfi_data"].get("transforms", [])
     if len(mp_sockets) <= 0:
         raise RuntimeError("MP XFI attachment matrix 0 missing")
-    # The verified player assembly contract always attaches AP through the
-    # body's third serialized transform. AP-family guessing and visual offsets
-    # are intentionally not part of the release implementation.
-    ap_socket_index = 2
-    if len(bp_sockets) <= ap_socket_index:
+    detected = detect_assembly_profile(ap)
+    selected_profile = detected["profile"] if assembly_profile == "AUTO" else assembly_profile
+    if selected_profile == "LEGACY_MERGED_ARM" and detected["profile"] != "LEGACY_MERGED_ARM":
+        raise RuntimeError("AP does not contain a verified merge_a/larm and merge_b/rarm pair")
+    if selected_profile == "CURRENT_AR" and detected["profile"] == "LEGACY_MERGED_ARM":
         raise RuntimeError(
-            "BP XFI attachment matrix 2 missing"
+            "Legacy merged arm AP detected. CURRENT_AR would attach it incorrectly; "
+            "choose AUTO or Legacy merged arm pair."
         )
     mp_container = _assembly_container(
         mp["collection"], "ASSEMBLY_MP", mp["node_objects"], mp["mesh_objects"]
@@ -718,12 +782,49 @@ def assemble_player_parts(
     bp_container.parent = _first_mesh_node(mp)
     bp_container.matrix_parent_inverse = Matrix.Identity(4)
     bp_container.matrix_local = to_blender_matrix(mp_sockets[0])
-    ap_container.parent = _first_mesh_node(bp)
-    ap_container.matrix_parent_inverse = Matrix.Identity(4)
-    ap_container.matrix_local = to_blender_matrix(bp_sockets[ap_socket_index])
+    bp_visual = _first_mesh_node(bp)
+    attachment_summary = ""
+    ap_socket_index: int | None = None
+    if selected_profile == "CURRENT_AR":
+        ap_socket_index = 2
+        if len(bp_sockets) <= ap_socket_index:
+            raise RuntimeError("BP XFI attachment matrix 2 missing")
+        ap_container.parent = bp_visual
+        ap_container.matrix_parent_inverse = Matrix.Identity(4)
+        ap_container.matrix_local = to_blender_matrix(bp_sockets[ap_socket_index])
+        attachment_summary = "AP root -> BP XFI[2] tower"
+    elif selected_profile == "LEGACY_MERGED_ARM":
+        if len(bp_sockets) <= 1:
+            raise RuntimeError("Legacy merged arm requires BP XFI matrices 0 and 1")
+        left = ap["node_objects"][int(detected["left_index"])]
+        right = ap["node_objects"][int(detected["right_index"])]
+        for branch, socket_index, role in (
+            (left, 0, "larm"),
+            (right, 1, "rarm"),
+        ):
+            branch.parent = bp_visual
+            branch.matrix_parent_inverse = Matrix.Identity(4)
+            branch.matrix_local = to_blender_matrix(bp_sockets[socket_index])
+            branch["nova_attachment_role"] = role
+            branch["nova_attachment_socket"] = socket_index
+        attachment_summary = "merge_a/larm -> BP XFI[0], merge_b/rarm -> BP XFI[1]"
+    else:
+        raise RuntimeError(f"Unknown assembly profile: {selected_profile}")
     mp_container["nova_part_role"] = "MP"
     bp_container["nova_part_role"] = "BP"
     ap_container["nova_part_role"] = "AP"
+    ap_container["nova_assembly_profile"] = selected_profile
+    ap_container["nova_attachment_summary"] = attachment_summary
+    if import_animations:
+        durations = []
+        for part, selected_action in ((mp, action_ids["mp"]), (bp, action_ids["bp"]), (ap, action_ids["ap"])):
+            clip = xfi_parser.clip_for_mode(part["xfi_data"], selected_action)
+            start = int(clip.get("start_frame", 0))
+            end = max(int(clip.get("end_frame", start)), start + 1)
+            durations.append(1 + (end - start - 1) * 33)
+        context.scene.frame_start = 1
+        context.scene.frame_end = max(durations, default=1)
+        context.scene.frame_set(1)
     context.view_layer.update()
     return {
         "mp": mp,
@@ -733,8 +834,12 @@ def assemble_player_parts(
         "bp_container": bp_container,
         "ap_container": ap_container,
         "action_id": action_id,
+        "action_ids": action_ids,
         "dynamic_inheritance": True,
         "ap_socket_index": ap_socket_index,
+        "assembly_profile": selected_profile,
+        "profile_reason": detected["reason"],
+        "attachment_summary": attachment_summary,
     }
 
 
@@ -804,7 +909,7 @@ class IMPORT_SCENE_OT_nova1492_gx(bpy.types.Operator, ImportHelper):
 class IMPORT_SCENE_OT_nova1492_assembled_unit(bpy.types.Operator):
     bl_idname = "import_scene.nova1492_assembled_unit"
     bl_label = "Import Nova1492 Assembled Unit"
-    bl_description = "Import MP, BP and AP using MP XFI[0] and BP XFI[2]"
+    bl_description = "Import MP/BP/AP using current AR or detected legacy merged-pair rules"
     bl_options = {"UNDO", "PRESET"}
 
     mp_path: StringProperty(
@@ -822,9 +927,33 @@ class IMPORT_SCENE_OT_nova1492_assembled_unit(bpy.types.Operator):
         description="Weapon part GX file",
         subtype="FILE_PATH",
     )
-    action_id: IntProperty(
-        name="XFI Action ID",
-        description="XFI action selected after import",
+    assembly_profile: EnumProperty(
+        name="Assembly profile",
+        description="Choose how AP hierarchy is connected to BP XFI sockets",
+        items=(
+            ("AUTO", "Auto (recommended)", "Detect a verified legacy pair; otherwise use current AR"),
+            ("CURRENT_AR", "Current AR", "Attach the complete AP root to BP XFI[2]"),
+            ("LEGACY_MERGED_ARM", "Legacy merged arm pair", "Attach merge_a/larm and merge_b/rarm to BP XFI[0]/[1]"),
+        ),
+        default="AUTO",
+    )
+    mp_action_id: IntProperty(
+        name="MP XFI Action ID",
+        description="Raw XFI action ID for the lower/mobile part",
+        default=0,
+        min=0,
+        max=255,
+    )
+    bp_action_id: IntProperty(
+        name="BP XFI Action ID",
+        description="Raw XFI action ID for the body part",
+        default=0,
+        min=0,
+        max=255,
+    )
+    ap_action_id: IntProperty(
+        name="AP XFI Action ID",
+        description="Raw XFI action ID for the weapon part",
         default=0,
         min=0,
         max=255,
@@ -851,7 +980,10 @@ class IMPORT_SCENE_OT_nova1492_assembled_unit(bpy.types.Operator):
         layout.prop(self, "bp_path")
         layout.prop(self, "ap_path")
         layout.separator()
-        layout.prop(self, "action_id")
+        layout.prop(self, "assembly_profile")
+        layout.prop(self, "mp_action_id")
+        layout.prop(self, "bp_action_id")
+        layout.prop(self, "ap_action_id")
         layout.prop(self, "import_animations")
         layout.prop(self, "pack_images")
         layout.prop(self, "strict_color_textures")
@@ -873,22 +1005,26 @@ class IMPORT_SCENE_OT_nova1492_assembled_unit(bpy.types.Operator):
                 self.report({"ERROR"}, f"{role} must be a GX file: {path.name}")
                 return {"CANCELLED"}
         try:
-            assemble_player_parts(
+            result = assemble_player_parts(
                 context,
                 str(paths["MP"]),
                 str(paths["BP"]),
                 str(paths["AP"]),
-                self.action_id,
+                0,
                 self.import_animations,
                 self.pack_images,
                 self.strict_color_textures,
+                self.assembly_profile,
+                self.mp_action_id,
+                self.bp_action_id,
+                self.ap_action_id,
             )
         except Exception as error:
             self.report({"ERROR"}, str(error))
             return {"CANCELLED"}
         self.report(
             {"INFO"},
-            f"Assembled MP={paths['MP'].name}, BP={paths['BP'].name}, AP={paths['AP'].name}",
+            f"Assembled with {result['assembly_profile']}: {result['attachment_summary']}",
         )
         show_materials_in_viewport(context)
         return {"FINISHED"}
