@@ -58,6 +58,18 @@ if xfi["ok"]:
 권위 계약값과 일치함을 확인했습니다. 설치법과 제한은
 [`blender_addon/README_KO.md`](blender_addon/README_KO.md)에 분리해 설명합니다.
 
+### 실제 조립 예시
+
+![토들러N, 플래툰, 헤비배럴 모델링 쿼드뷰](docs/images/toddler-n_platoon_heavy-barrel_quad-view.png)
+
+위 예시는 정식 `v0.6.0` 임포터로 `n_legs41_tdr.gx`(토들러N),
+`body2_prt.gx`(플래툰), `arm2_hbbr.gx`(헤비배럴)를 불러온 결과입니다. 위치를 눈으로
+맞추거나 추가 보정하지 않았으며 `MP XFI[0] → BP XFI[2]` 계약만 사용했습니다.
+
+처음 설치한 사용자도 같은 결과를 재현할 수 있도록 메뉴별 사용 순서와 텍스처가 회색으로
+보일 때의 해결법을 [`Blender 사용 및 문제 해결 가이드`](docs/BLENDER_GUIDE_KO.md)에
+정리했습니다.
+
 ## 실행 파일 구조 연구
 
 [`research`](research)에는 Nova 1492 실행 파일에서 확인한 다음 내용을 공개합니다.
