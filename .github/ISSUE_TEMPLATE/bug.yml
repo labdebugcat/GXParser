@@ -1,0 +1,30 @@
+name: 파서 오류
+description: 재현 가능한 GX/XFI 파싱 오류를 제보합니다.
+title: "[Bug] "
+labels: ["bug", "triage"]
+body:
+  - type: checkboxes
+    attributes:
+      label: 확인 사항
+      options:
+        - label: 원본 게임 파일이나 추출 에셋을 첨부하지 않았습니다.
+          required: true
+        - label: 기존 이슈에서 같은 오류를 검색했습니다.
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: GXParser 버전 또는 커밋
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 재현 방법과 오류 메시지
+    validations:
+      required: true
+  - type: textarea
+    id: metadata
+    attributes:
+      label: 비식별화한 파일 정보
+      description: 파일 크기, SHA-256, 관련 오프셋과 카운트만 작성해 주세요.

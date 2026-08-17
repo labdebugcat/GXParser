@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nova1492-gxparser"
+version = "0.1.0"
+description = "A conservative Python parser for Nova 1492 GX and XFI resource metadata"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Project N" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Multimedia :: Graphics :: 3D Modeling",
+]
+
+[project.urls]
+Repository = "https://github.com/labdebugcat/GXParser"
+Issues = "https://github.com/labdebugcat/GXParser/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
