@@ -1,0 +1,26 @@
+{
+  "schema": "nova1492.current-gx-assembly-baseline.v1",
+  "date": "2026-07-25",
+  "status": "current",
+  "executable_sha256": "A07AA081ED9BF87D18C58C209E5B8F5D35884F2323A27DCE5C7181CB5EEB516D",
+  "canonical_document": "06_GX_ATTACHMENT_NATIVE_EVIDENCE_2026-07-25_KO.md",
+  "machine_evidence": "evidence/outputs/gx_attachment_native_evidence_20260725.json",
+  "generator": "source/research_scripts/audit_gx_attachment_evidence_20260725.py",
+  "regression_test": "source/research_scripts/test_gx_attachment_evidence_20260725.py",
+  "supersedes": [
+    "05_UNIT_ASSEMBLY_CONTRACT_KO.md",
+    "evidence/outputs/nova1492_unit_gx_assembly_contract.json",
+    "evidence/outputs/nova1492_unit_gx_assembly_contract_ko.md"
+  ],
+  "standard_attachment": {
+    "hierarchy": [[0, 1], [1, 4]],
+    "bp_local": "MP XFI matrix[0]",
+    "ap_local": "BP XFI matrix[2]"
+  },
+  "forbidden_fallbacks": [
+    "center or ground-align independent part bounds",
+    "place MP/BP/AP as identity sibling roots",
+    "invent mount-type translation presets",
+    "use visual labels as transform evidence"
+  ]
+}

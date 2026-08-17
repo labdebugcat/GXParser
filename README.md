@@ -1,8 +1,8 @@
 # GXParser
 
-GXParser는 Nova 1492의 `.GX`와 `.XFI` 파일에서 현재 확인된 구조만 읽어 내는 순수
-Python 파서입니다. Blender나 게임 클라이언트에 의존하지 않으며 입력 파일을 수정하지
-않습니다.
+GXParser는 Nova 1492의 `.GX`와 `.XFI` 구조를 읽는 순수 Python 파서, Blender 임포터,
+그리고 원본 실행 파일에서 확인한 GX 렌더링·조립 구조 연구 자료를 함께 제공합니다.
+모든 도구는 클라이언트 파일을 읽기 전용 입력으로 취급합니다.
 
 ## 현재 읽는 정보
 
@@ -45,15 +45,43 @@ if xfi["ok"]:
 `read_gx()`와 `read_xfi()`는 성공 여부를 `ok`에 담은 사전을 반환합니다. XFI가 GX 옆에
 있을 때 자동으로 찾으려면 `read_for_gx()`를 사용합니다.
 
-## 프로젝트 범위
+## Blender 임포터
 
-이 저장소는 파서 코어와 재배포 가능한 합성 테스트만 포함합니다. 다음 항목은 포함하지
-않습니다.
+[`blender_addon/nova1492_gx_importer`](blender_addon/nova1492_gx_importer)에는 서로 다른
+두 작업 흐름이 있습니다.
 
-- Nova 1492 클라이언트 파일과 추출 에셋
-- 실행 파일 분석 자료와 과거 연구 덤프
-- Blender 자동 파트 조립처럼 검증이 끝나지 않은 기능
-- 게임 실행, 서버 통신, 인증 또는 보호 기능을 변경하는 코드
+- **단일 파츠 임포터**: GX 하나의 계층, 메시, 재질, 텍스처와 XFI action을 Blender로 가져옵니다.
+- **복합 조립 임포터**: 플레이어 MP/BP/AP 세 파츠를 `MP XFI[0]`과 `BP XFI[2]`의 확정 체인으로 조립합니다.
+
+기존의 AP 유형별 0/2/3 소켓 추측과 TOP fallback은 정식 버전에서 제거했습니다. Blender
+5.2.0 LTS에서 대표 단일 파츠 2개와 조립 조합 2개를 검사해 메시 수와 최종 BP/AP 위치가
+권위 계약값과 일치함을 확인했습니다. 설치법과 제한은
+[`blender_addon/README_KO.md`](blender_addon/README_KO.md)에 분리해 설명합니다.
+
+## 실행 파일 구조 연구
+
+[`research`](research)에는 Nova 1492 실행 파일에서 확인한 다음 내용을 공개합니다.
+
+- GX 노드·행렬·리소스 로더와 draw submission 호출 구조
+- 재질 플래그, alpha test/blend, 투명 큐와 texture upload
+- TGA/BMP/companion alpha 처리와 sampler 상태
+- XFI socket 선택과 MP/BP/AP 조립 계약
+- 카메라, 시간 함수, 동적 광원, 투사체·효과 관련 GX 경로
+- 실행 파일 해시별 주소 적용 범위와 클라이언트/서버 경계
+
+75개의 세부 분석 기록, 권위 판정 문서, 217개 GX 대조를 포함한 기계 판독 증거와 재현
+계약을 주제별로 찾을 수 있도록 [`research/README_KO.md`](research/README_KO.md)에 색인을
+두었습니다.
+
+## 공개 범위
+
+저장소에는 코드, 문서, 주소·호출 관계와 비식별화된 기계 판독 증거를 포함합니다. 다음은
+포함하지 않습니다.
+
+- Nova 1492 실행 파일과 클라이언트 원본 바이너리
+- GX/XFI/텍스처 등 원본 게임 자산
+- 계정·서버·인증 또는 보호 기능을 우회하는 구현
+- 후속 검증에서 틀린 것으로 판정된 조립 이미지와 보정값
 
 버그 제보에는 원본 파일을 첨부하지 말고 파일 크기, SHA-256, 오류 메시지와 비식별화한
 구조 정보만 제공해 주세요.
@@ -63,6 +91,14 @@ if xfi["ok"]:
 ```powershell
 python -m unittest discover -s tests -v
 python -m build
+```
+
+Blender 5.2.0 LTS와 합법적으로 보유한 로컬 클라이언트가 있는 경우 실제 임포터 검사는
+다음처럼 실행합니다.
+
+```powershell
+blender --background --factory-startup --python tests/blender_smoke.py -- `
+  "C:\Program Files (x86)\Nova1492\datan\common"
 ```
 
 기여 기준은 [`CONTRIBUTING.md`](CONTRIBUTING.md), 비공개 취약점 제보 방법은
