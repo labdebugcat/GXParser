@@ -1,0 +1,65 @@
+{
+  "schema": "nova1492.gx-attachment-completion-audit.v1",
+  "status": "complete",
+  "passed": 10,
+  "total": 10,
+  "requirements": [
+    {
+      "requirement": "exact installed executable identity",
+      "passed": true,
+      "evidence": "native evidence executable SHA-256"
+    },
+    {
+      "requirement": "all resolved part GX nodes, parents, flags, matrices and mesh/empty-node membership collected",
+      "passed": true,
+      "evidence": "gx_attachment_native_evidence_20260725.json"
+    },
+    {
+      "requirement": "Godot reader parity with native-byte inventory",
+      "passed": true,
+      "evidence": "Godot 217/217 hash/node/parent/flag/matrix parity log"
+    },
+    {
+      "requirement": "MP to BP and BP to AP native scene-slot path",
+      "passed": true,
+      "evidence": "EXE disassembly and selector jump table"
+    },
+    {
+      "requirement": "matrix order and coordinate conversion",
+      "passed": true,
+      "evidence": "Godot implementation plus reference assembly 2/2"
+    },
+    {
+      "requirement": "parent animation propagation",
+      "passed": true,
+      "evidence": "native sampler call path and Godot dynamic mount update"
+    },
+    {
+      "requirement": "arm, shoulder and top branches separated from placement",
+      "passed": true,
+      "evidence": "compatibility +0x7C comparison and slot-4 selector"
+    },
+    {
+      "requirement": "all standard part XFI read by Godot",
+      "passed": true,
+      "evidence": "Godot XFI corpus log"
+    },
+    {
+      "requirement": "confirmed evidence, derivation and hypothesis separated",
+      "passed": true,
+      "evidence": "machine evidence evidence_policy and claims"
+    },
+    {
+      "requirement": "obsolete center/identity assembly baseline cannot be mistaken for current",
+      "passed": true,
+      "evidence": "current baseline pointer and superseded marker"
+    }
+  ],
+  "artifact_sha256": {
+    "native_evidence": "5CAFFE2A24F42D3DB477A2C94A74BE5C288947EEF50E660950CCD1A7E4A204D4",
+    "canonical_document": "EAFCDCA25A24FA0C9444CD78D9B52B9CC8ABD4B9EC9681C811FF7FF4FF88E1EA",
+    "godot_gx_reader": "0A22D4F792DAA124F8C65A30EDF621650E012C9F27EE203B87A5341239B926C8",
+    "godot_xfi_reader": "6C81211FCD4A07D7F68BB473FABBBE55F8F25244A4D32BA455DEEEBD1D4CBDE2",
+    "godot_preview": "200BEFAD56A02A28ABC09DF8A9B9CB05C2741B97B8C704688F7A81C4CD7E80C4"
+  }
+}
